@@ -1,12 +1,22 @@
 {
+  "license": "MIT",
   "name": "vue-starfall",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "main": "./dist/vue-starfall.common.js",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build-bundle": "vue-cli-service build --target lib --name vue-starfall ./src/main.js",
     "lint": "vue-cli-service lint"
   },
+  "files": [
+    "dist/*",
+    "src/*",
+    "public/*",
+    "*.json",
+    "*.js"
+  ],
   "dependencies": {
     "core-js": "^2.6.5",
     "vue": "^2.6.10"
