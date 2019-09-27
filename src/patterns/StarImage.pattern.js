@@ -1,8 +1,6 @@
 import { ImagePattern } from './Image.pattern'
 
 export class StarImagePattern extends ImagePattern {
-  canvas
-  size
 
   getImage () {
     return this.canvas
