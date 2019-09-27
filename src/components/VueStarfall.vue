@@ -132,7 +132,7 @@ export default {
     },
     animationStart (lastTime = null) {
       this.animationId = window.requestAnimationFrame(time => {
-        let relTime = Math.min(lastTime ? time - lastTime : 0, 1000 / 120)
+        let relTime = Math.min(lastTime ? time - lastTime : 0, 1000 / 5)
         let stepTime = relTime / 1000
         this.fixCanvasSize()
         this.animationStep(stepTime)
