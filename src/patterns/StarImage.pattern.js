@@ -8,7 +8,7 @@ export class StarImagePattern extends ImagePattern {
     return this.canvas
   }
 
-  constructor (size = 16, color = '#ccccff') {
+  constructor (size = 16, color = '#eeeeff', shadow = 'blue') {
     super()
 
     this.size = size
@@ -28,7 +28,9 @@ export class StarImagePattern extends ImagePattern {
     let ctx = this.canvas.getContext('2d')
     ctx.beginPath()
     ctx.strokeStyle = color
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1.5
+    ctx.shadowBlur = size * 2
+    ctx.shadowColor = shadow
 
     starPoints.reduce((previousValue, currentValue) => {
       if (previousValue) {
