@@ -14,6 +14,7 @@
 <script>
 import { Star } from '../classes/star'
 import { StarImagePattern } from '../patterns/StarImage.pattern'
+// import { CrossImagePattern } from '../patterns/CrossImage.pattern'
 
 export default {
   name: 'VueStarfall',
@@ -29,7 +30,7 @@ export default {
     },
     maxStars: {
       type: [Number],
-      default: 30
+      default: 60
     },
     starPattern: {
       type: Object,
@@ -39,15 +40,15 @@ export default {
     },
     fallXSpeed: {
       type: [Number],
-      default: 0.07
+      default: 0.01
     },
     fallYSpeed: {
       type: [Number],
-      default: 0.1
+      default: 0.02
     },
     rotationSpeed: {
       type: [Number],
-      default: 5
+      default: 2
     },
     generationMinSize: {
       type: [Number],
@@ -60,6 +61,18 @@ export default {
     userFeedback: {
       type: Boolean,
       default: false
+    },
+    decaySpeed: {
+      type: [Number],
+      default: 0.95
+    },
+    decayRestoreSpeed: {
+      type: [Number],
+      default: 1.05
+    },
+    backgroundColor: {
+      type: String,
+      default: 'rgba(0,0,0,0.2)'
     }
   },
 
@@ -75,7 +88,7 @@ export default {
   methods: {
     moveStar (star, relSpeed) {
       star.x = (star.x - relSpeed * this.fallXSpeed * this.feedbackDecay)
-      star.y = (star.y + relSpeed * this.fallYSpeed * this.feedbackDecay)
+      star.y = (star.y + relSpeed * this.fallYSpeed * (1.0 + star.z) * this.feedbackDecay)
       if (star.y > 1 || star.x < 0) {
         star.y = 0
         star.x = Math.random() * 2
@@ -85,6 +98,11 @@ export default {
     drawStar (star) {
       let x = Math.floor(this.context.canvas.clientWidth * star.x)
       let y = Math.floor(this.context.canvas.clientHeight * star.y)
+
+      if (this.userFeedback) {
+        x += this.shiftX * star.z * 100
+        y += this.shiftY * star.z * 100
+      }
 
       this.context.fillStyle = this.starImagePattern
       this.context.save()
@@ -100,7 +118,7 @@ export default {
       this.starImagePattern = this.context.createPattern(this.starPattern.getImage(), 'no-repeat')
     },
     animationStep (time) {
-      this.context.fillStyle = 'rgba(255,255,255,0.2)'
+      this.context.fillStyle = this.backgroundColor
       this.context.fillRect(0, 0, this.context.canvas.clientWidth, this.context.canvas.clientHeight)
 
       this.stars.forEach(s => {
@@ -108,12 +126,13 @@ export default {
         this.moveStar(s, time)
       })
 
-      this.feedbackDecay += 0.01
-      if (this.feedbackDecay > 1) this.feedbackDecay = 1
+      if (this.userFeedback) {
+        this.restoreDecay()
+      }
     },
     animationStart (lastTime = null) {
       this.animationId = window.requestAnimationFrame(time => {
-        let relTime = lastTime ? time - lastTime : 0
+        let relTime = Math.min(lastTime ? time - lastTime : 0, 1000 / 120)
         let stepTime = relTime / 1000
         this.fixCanvasSize()
         this.animationStep(stepTime)
@@ -126,32 +145,51 @@ export default {
     seedStars () {
       this.stars.length = 0
       for (let i = 0; i < this.maxStars; i++) {
+        let z = Math.random()
         this.stars.push(
           new Star(
             Math.random(),
             Math.random(),
-            Math.random(),
-            this.generationMinSize + Math.random() * (this.generationMaxSize - this.generationMinSize),
+            z,
+            this.generationMinSize + z * (this.generationMaxSize - this.generationMinSize),
             Math.random() * Math.PI * 2
           ))
       }
       this.stars.sort((a, b) => a.zIndex > b.zIndex ? 1 : -1)
     },
     fixCanvasSize () {
-      if (this.context.canvas.width !== this.context.canvas.clientWidth) {
+      if (this.context.canvas.width !== this.context.canvas.clientWidth && this.context.canvas.clientWidth !== 0) {
         this.context.canvas.width = this.context.canvas.clientWidth
       }
-      if (this.context.canvas.height !== this.context.canvas.clientHeight) {
+      if (this.context.canvas.height !== this.context.canvas.clientHeight && this.context.canvas.clientHeight !== 0) {
         this.context.canvas.height = this.context.canvas.clientHeight
       }
     },
     bindUserFeedback () {
-      this.$refs.starfallContainer.addEventListener('mousemove', () => {
+      this.$refs.starfallContainer.addEventListener('mouseleave', (e) => {
+        this.mouseX = this.mouseY = null
+      })
+
+      this.$refs.starfallContainer.addEventListener('mousemove', (e) => {
         this.decay()
+        if (this.mouseX !== null) {
+          this.shiftX += (e.clientX - this.mouseX) / this.context.canvas.width
+        }
+        if (this.mouseY !== null) {
+          this.shiftY += (e.clientY - this.mouseY) / this.context.canvas.height
+        }
+        this.mouseX = e.clientX
+        this.mouseY = e.clientY
       }, false)
     },
     decay () {
-      this.feedbackDecay *= 0.98
+      this.feedbackDecay = Math.max(this.decaySpeed * this.feedbackDecay, 0.15)
+    },
+    restoreDecay () {
+      this.shiftX *= 0.999
+      this.shiftY *= 0.999
+
+      this.feedbackDecay = Math.min(this.feedbackDecay * this.decayRestoreSpeed, 1.0)
     }
   },
 
@@ -169,7 +207,11 @@ export default {
       stars: [],
       starImagePattern: null,
       starImagePatternSize: null,
-      feedbackDecay: 1
+      feedbackDecay: 1,
+      mouseX: null,
+      mouseY: null,
+      shiftX: 0,
+      shiftY: 0
     }
   }
 }
