@@ -167,10 +167,13 @@ export default {
     },
     bindUserFeedback () {
       this.$refs.starfallContainer.addEventListener('mouseleave', (e) => {
+        if (!this.userFeedback) return
         this.mouseX = this.mouseY = null
       })
 
       this.$refs.starfallContainer.addEventListener('mousemove', (e) => {
+        if (!this.userFeedback) return
+
         this.decay()
         if (this.mouseX !== null) {
           this.shiftX += (e.clientX - this.mouseX) / this.context.canvas.width
